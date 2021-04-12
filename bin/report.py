@@ -2,6 +2,7 @@ import click
 import pandas as pd
 import pysam
 from Bio import SeqIO
+import os
 
 
 def generate_table(df,report_fh):
@@ -48,15 +49,15 @@ def generate_document_header(report_fh):
 def generate_document_footer(report_fh):
     report_fh.write("\\end{document}\n")
 
-def generate_qa_section(report_fh,base_path):
+def generate_qa_section(report_fh,base_path, consensus_file, bam_file):
     """Generates a quality assurance section."""
-    for seq_record in SeqIO.parse(base_path+"/inputs/consensus.fasta", "fasta"):
+    for seq_record in SeqIO.parse(consensus_file, "fasta"):
         numn = seq_record.seq.upper().count("N")
         trimmedseq = seq_record.seq.strip()
         numg = trimmedseq.count("-")
         break
 
-    samfile = pysam.AlignmentFile(base_path+"/inputs/sample.bam","rb")
+    samfile = pysam.AlignmentFile(bam_file,"rb")
 
     report_fh.write("\\section{QA Metrics and Visualizations}\n")
     report_fh.write("Summary Statistics:\n")
@@ -93,7 +94,7 @@ def generate_variant_summary_section(report_fh,path):
     
 
 
-def generate_variant_specific_sections(report_fh, path):
+def generate_variant_specific_sections(report_fh, path, bam_file_path):
     """Generate a table for each variant specific section."""
     report_fh.write("\\section{Variant Specific Support}\n")
     df = pd.read_csv(path+"cov_lineage_variants.tsv",sep="\t")
@@ -102,7 +103,7 @@ def generate_variant_specific_sections(report_fh, path):
     df['Freq']="0.0"
     df['Present']="No"
 
-    samfile = pysam.AlignmentFile(path+"sample.bam","rb")
+    samfile = pysam.AlignmentFile(bam_file_path,"rb")
     rsl = df.columns.get_loc("RS")
     trl = df.columns.get_loc("TR")
     freql = df.columns.get_loc("Freq")
@@ -170,7 +171,7 @@ def generate_variant_specific_sections(report_fh, path):
     # report_fh.write("\\includegraphics{heatmap-barrie}\n")
     # report_fh.write("\\end{figure}\n")
 
-def generate_unassociated_variant_section(report_fh,path):
+def generate_unassociated_variant_section(report_fh,path, bam_file_path):
     """Generate a list of important mutations which are unassociated with a ny particluar variant"""
     report_fh.write("\\section{Significant Mutations Unassociated with Specific Variants}\n")
     df = pd.read_csv(path+"cov_lineage_variants.tsv",sep="\t")
@@ -182,7 +183,7 @@ def generate_unassociated_variant_section(report_fh,path):
     df['Freq']="0.0"
     df['Present']="No"
 
-    samfile = pysam.AlignmentFile(path+"sample.bam","rb")
+    samfile = pysam.AlignmentFile(bam_file_path,"rb")
     rsl = df.columns.get_loc("RS")
     trl = df.columns.get_loc("TR")
     freql = df.columns.get_loc("Freq")
@@ -242,22 +243,25 @@ def generate_unassociated_variant_section(report_fh,path):
 
 @click.command()
 @click.argument('base_path')
-def report(base_path):
+@click.argument('consensus_file')
+@click.argument('bam_file')
+def report(base_path, consensus_file, bam_file):
     """Generate a wastewater variant report file."""
     # Open the report file
     report_fh = open("covid_variants_report.tex","w")
 
+
     generate_document_header(report_fh)
     
-    generate_qa_section(report_fh,base_path)
+    generate_qa_section(report_fh,base_path, os.path.join(base_path,consensus_file), os.path.join(base_path,bam_file))
 
     generate_qa_consensus_tree(report_fh,base_path+"/outputs/trees/")
 
     generate_variant_summary_section(report_fh,base_path+"/inputs/")
 
-    generate_variant_specific_sections(report_fh,base_path+"/inputs/")
+    generate_variant_specific_sections(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
 
-    generate_unassociated_variant_section(report_fh,base_path+"/inputs/")
+    generate_unassociated_variant_section(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
 
     generate_document_footer(report_fh)
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env nextflow
 
-
 // Note: Nextflow.enable.dsl = 2 enables the workflow structure and functions
 nextflow.enable.dsl = 2
 
@@ -11,6 +10,27 @@ def checkFileExists(file_path) {
   if ( !f.isFile() || !f.exists() ) {
     exit 1, "File '$file_path' does not exist!"
   }
+}
+
+if (params.help){
+    helpMessage()
+    exit 0
+} 
+
+def helpMessage() {
+    // Add to this help message with new command line parameters
+    log.info"""
+    Pipeline that automates COVID-19 wastewater report generation
+    Usage:
+    nextflow run --consensus_file consensus.fasta --bam_file consensus.bam  -profile <profile> 
+    Mandatory arguments:
+      --consensus_file [file]                   Path to the consensus COVID-19 genome wastewater assembly
+      --bam_file [file]                         Path to the aligned wastewater reads to the MN908947.3 reference
+      -profile                                  Available: conda, singularity, standard
+      --resume                                  Resume from the last failed step
+      --help                                    Display this help message
+             """
+                                                
 }
 
 
@@ -175,12 +195,13 @@ process build_report {
     script:
     println "Generating the latex version of the report."
     """
-    python $projectDir/bin/report.py $projectDir
+    python $projectDir/bin/report.py $projectDir ${params.consensus_file} ${params.bam_file}
     """
 }
 
 process convert_report_to_pdf {
-    publishDir "$projectDir/outputs/report"
+
+    publishDir "$projectDir/outputs/report", mode: 'copy'
     input:
     file 'covid_variants_report.tex' 
     output:
@@ -199,6 +220,8 @@ workflow {
     checkFileExists(params.gisaid_metadata_file)
     checkFileExists(params.gisaid_msa_file)
     checkFileExists(params.consensus_file)
+    checkFileExists(params.bam_file)
+    checkFileExists(params.variants_file)
 
 
     // Build the trees
@@ -238,7 +261,8 @@ workflow {
 // INTROSPECTION
 //=============================================================================
 workflow.onComplete {
-    println """
+    this.minimalInformationMessage()
+    log.info """\n
     Pipeline execution summary
     ---------------------------
     Completed at : ${workflow.complete}
