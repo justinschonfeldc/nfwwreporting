@@ -26,10 +26,14 @@ Pipeline that automates COVID-19 wastewater report generation
 
 ### Sample Inputs:
 Sample BAM File
+
 Sample Consensus FIle
+
 IVAR Output File
 
 ### Reference Inputs:
 GISAID Metadata
+
 GISAID Multiple Sequence Alignment
+
 Variant Specification
