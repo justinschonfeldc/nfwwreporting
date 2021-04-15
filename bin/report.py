@@ -94,7 +94,7 @@ def generate_variant_summary_section(report_fh,path):
     
 
 
-def generate_variant_specific_sections(report_fh, path, bam_file_path):
+def generate_variant_specific_sections(report_fh, path, bam_file_path, heatmap_file_path):
     """Generate a table for each variant specific section."""
     report_fh.write("\\section{Variant Specific Support}\n")
     df = pd.read_csv(path+"cov_lineage_variants.tsv",sep="\t")
@@ -167,9 +167,14 @@ def generate_variant_specific_sections(report_fh, path, bam_file_path):
     report_fh.write("\\item TR - Total Number of Reads - Total number of reads.  \n")
     report_fh.write("\\item Present - Yes/No based on whether or not the mutation is present.  Calculated based on read support against a fixed threshold. \n")
     report_fh.write("\\end{itemize}\n")
-    # report_fh.write("\\begin{figure}\n")
-    # report_fh.write("\\includegraphics{heatmap-barrie}\n")
-    # report_fh.write("\\end{figure}\n")
+
+    file_list = os.listdir(heatmap_file_path)
+    png_file_list = [x for x in file_list if x.endswith('.png')]
+    
+    for file_name in png_file_list:        
+        report_fh.write("\\begin{figure}\n")
+        report_fh.write(f"\\includegraphics{{{heatmap_file_path+file_name}}}\n")
+        report_fh.write("\\end{figure}\n")
 
 def generate_unassociated_variant_section(report_fh,path, bam_file_path):
     """Generate a list of important mutations which are unassociated with a ny particluar variant"""
@@ -259,7 +264,7 @@ def report(base_path, consensus_file, bam_file):
 
     generate_variant_summary_section(report_fh,base_path+"/inputs/")
 
-    generate_variant_specific_sections(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
+    generate_variant_specific_sections(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file), base_path+"/outputs/heatmaps/")
 
     generate_unassociated_variant_section(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
 
