@@ -181,9 +181,19 @@ process plot_coverage {
     """
 }
 
-// process plot_heatmaps{
+process plot_heatmaps{
+    publishDir "$projectDir/outputs/heatmaps", mode: 'copy'
 
-// }
+    output:
+    file 'heatmap*.png' 
+ 
+    script:
+    log.info "Generate heatmap plots for each VOC using VCFParser"
+    """
+    vcfparser -f $projectDir/$params.vcfparser_batch_file -voc all --subplots_mode oneplotperfile --annotate
+    """
+
+}
 
 process build_report {
     input:
@@ -222,6 +232,7 @@ workflow {
     checkFileExists(params.consensus_file)
     checkFileExists(params.bam_file)
     checkFileExists(params.variants_file)
+    checkFileExists(params.vcfparser_batch_file)
 
 
     // Build the trees
@@ -247,6 +258,7 @@ workflow {
     plot_coverage()
 
     // Plot the heatmaps
+    plot_heatmaps()
 
     // Build the report
     build_report(plot_coverage.out,draw_canada_oneper.out,draw_canada_recent.out)
@@ -261,7 +273,6 @@ workflow {
 // INTROSPECTION
 //=============================================================================
 workflow.onComplete {
-    this.minimalInformationMessage()
     log.info """\n
     Pipeline execution summary
     ---------------------------
