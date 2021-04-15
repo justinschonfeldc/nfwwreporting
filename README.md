@@ -1,5 +1,14 @@
 # Wastwater VOC pipeline with automatic report generation
 
+
+## Installation
+
+```
+
+```
+
+## Running
+
 ```
 Pipeline that automates COVID-19 wastewater report generation
     Usage:
@@ -12,3 +21,15 @@ Pipeline that automates COVID-19 wastewater report generation
       --resume                                  Resume from the last failed step
       --help                                    Display this help message
 ```
+
+## Inputs
+
+### Sample Inputs:
+Sample BAM File
+Sample Consensus FIle
+IVAR Output File
+
+### Reference Inputs:
+GISAID Metadata
+GISAID Multiple Sequence Alignment
+Variant Specification
