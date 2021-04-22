@@ -84,16 +84,27 @@ def generate_qa_consensus_tree(report_fh,path):
     report_fh.write("\\caption{ML-Tree (iqtree 2.0.3) composed of the sample, the Wuhan reference, and the 100 most recent Canadian sequences present in the GISAID MSA.}")
     report_fh.write("\\end{figure}\n")
 
-def generate_variant_summary_section(report_fh,path):
+def generate_variant_summary_section(report_fh,path, variant_results):
     """Generates a variant summary section for the report."""
     report_fh.write("\\section{Variant Presence/Absence Summary}\n")
-    df = pd.read_csv(path+"variant_specifications.tsv",sep="\t")
-    df['Evidence']= 'None'
+    summary = {}
+    summary['Variant'] = list()
+    summary['Key Mut Present'] = list()
+    summary['Key Mut Total'] = list()
+    summary['Sig Mut Present'] = list()
+    summary['Sig Mut Total'] = list()
+    for vnt in variant_results:
+        summary['Variant'].append(vnt)
+        summary['Key Mut Present'].append(variant_results[vnt]['key_cnt'])
+        summary['Key Mut Total'].append(variant_results[vnt]['key_tot'])
+        summary['Sig Mut Present'].append(variant_results[vnt]['sig_cnt'])
+        summary['Sig Mut Total'].append(variant_results[vnt]['sig_tot'])
+    df = pd.DataFrame(summary)
     generate_table(df,report_fh)
     
 
 
-def generate_variant_specific_sections(report_fh, path, bam_file_path, heatmap_file_path):
+def generate_variant_specific_sections(report_fh, path, bam_file_path, heatmap_file_path, variant_results):
     """Generate a table for each variant specific section."""
     report_fh.write("\\section{Variant Specific Support}\n")
     df = pd.read_csv(path+"cov_lineage_variants.tsv",sep="\t")
@@ -148,6 +159,33 @@ def generate_variant_specific_sections(report_fh, path, bam_file_path, heatmap_f
             df.iat[i,freql] = 0
         if crs>20:
             df.iat[i,presentl] = "Yes"
+
+    for i in range(len(df)):
+        variant = df['VOC'][i]
+        if variant in variant_results:
+            if df['Key'][i] == True:
+                variant_results[variant]['key_tot'] += 1
+                if df['Present'][i] == "Yes":
+                    variant_results[variant]['key_cnt'] += 1
+            if df['SignatureSNV'][i] == True:
+                variant_results[variant]['sig_tot'] += 1
+                if df['Present'][i] == "Yes":
+                    variant_results[variant]['sig_cnt'] += 1        
+        else:
+            variant_results[variant] = dict()
+            variant_results[variant]['key_cnt']=0
+            variant_results[variant]['sig_cnt']=0
+            variant_results[variant]['key_tot']=0
+            variant_results[variant]['sig_tot']=0
+            if df['Key'][i] == True:
+                variant_results[variant]['key_tot'] += 1
+                if df['Present'][i] == "Yes":
+                    variant_results[variant]['key_cnt'] += 1
+            if df['SignatureSNV'][i] == True:
+                variant_results[variant]['sig_tot'] += 1
+                if df['Present'][i] == "Yes":
+                    variant_results[variant]['sig_cnt'] += 1
+    
     df = df.drop("Key",1)
     df = df.drop("Type",1)
     df = df.drop("Length",1)
@@ -261,11 +299,14 @@ def report(base_path, consensus_file, bam_file):
 
     generate_qa_consensus_tree(report_fh,base_path+"/outputs/trees/")
 
-    generate_variant_summary_section(report_fh,base_path+"/inputs/")
 
-    generate_variant_specific_sections(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file), base_path+"/outputs/heatmaps/")
+    variant_results = dict()
+    generate_variant_specific_sections(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file), base_path+"/outputs/heatmaps/", variant_results)
 
-    generate_unassociated_variant_section(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
+    generate_variant_summary_section(report_fh,base_path+"/inputs/", variant_results)
+
+
+    # generate_unassociated_variant_section(report_fh,base_path+"/inputs/", os.path.join(base_path,bam_file))
 
     generate_document_footer(report_fh)
 
