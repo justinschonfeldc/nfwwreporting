@@ -39,6 +39,17 @@ def helpMessage() {
 // PROCESSES
 //=============================================================================
 
+process generate_bai {
+    publishDir "$projectDir/inputs/"
+    output:
+    val 1
+    script:
+    """
+        samtools index $projectDir/${params.bam_file}
+    """
+
+}
+
 process collect_subset_for_trees {
     output:
     file 'canada_recent_subset.fasta' 
@@ -171,29 +182,30 @@ process draw_global_oneper {
 
 process plot_coverage { 
     publishDir "$projectDir/outputs/coverage"
+    input:
+    file "$projectDir/${params.bam_file}.bai"
     output:
     file 'coverage.png' 
  
     script:
     println "Generate a plot of the coverage."
     """
-    samtools index $projectDir/${params.bam_file}
     python $projectDir/bin/plot_coverage.py $projectDir/${params.bam_file} 
     """
 }
 
 process plot_heatmaps{
     publishDir "$projectDir/outputs/heatmaps", mode: 'copy'
-
+    input:
+    file "$projectDir/${params.bam_file}.bai"
     output:
     file 'heatmap*.png' 
  
     script:
     log.info "Generate heatmap plots for each VOC using VCFParser"
     """
-    vcfparser -f $projectDir/$params.vcfparser_batch_file -voc all --subplots_mode oneplotperfile --annotate
+    vcfparser -i $projectDir/${params.ivar_file} -bam $projectDir/${params.bam_file} -voc all --subplots_mode oneplotperfile --annotate
     """
-
 }
 
 process build_report {
@@ -233,8 +245,9 @@ workflow {
     checkFileExists(params.consensus_file)
     checkFileExists(params.bam_file)
     checkFileExists(params.variants_file)
-    checkFileExists(params.vcfparser_batch_file)
 
+    // Check that that .bai file exists
+    generate_bai()
 
     // Build the trees
     // Step 1: Generate an appropriate subset of GISAID sequences for each tree
@@ -256,10 +269,10 @@ workflow {
     draw_canada_recent(build_canada_recent.out)
 
     // Plot the coverage
-    plot_coverage()
+    plot_coverage(generate_bai.out)
 
     // Plot the heatmaps
-    plot_heatmaps()
+    plot_heatmaps(generate_bai.out)
 
     // Build the report
     build_report(plot_coverage.out,draw_canada_oneper.out,draw_canada_recent.out)

@@ -4,7 +4,6 @@ import pysam
 from Bio import SeqIO
 import os
 
-
 def generate_table(df,report_fh):
     """Generates a latex table from a pandas data frame."""
     num_columns = len(df.columns)

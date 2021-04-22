@@ -2,4 +2,5 @@ work/
 inputs/
 outputs/
 .nextflow/
-.nextflow.log
+.vscode/
+.nextflow.log*
