@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import click
 import pandas as pd
 import random
