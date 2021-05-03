@@ -5,8 +5,20 @@ from ete3 import Tree, TreeStyle, NodeStyle, faces, AttrFace
 @click.command()
 @click.argument('tree_fn')
 @click.argument('output_fn')
-def plot_trees(tree_fn,output_fn):
+@click.option('--samples',default="",help="Specify a file which contains the names of the samples, one per line.")
+def plot_trees(tree_fn,output_fn,samples):
     """ Plot a tree """
+
+    # Read in the samples
+    sampleList = []
+    inf = open(samples,"r")
+    for line in inf:
+        sampleList.append(line.strip())
+    inf.close()
+
+    print("Sample List:")
+    print(sampleList)
+
     os.environ['QT_QPA_PLATFORM']='offscreen'
     style = TreeStyle()
     style.mode = "c"
@@ -31,7 +43,7 @@ def plot_trees(tree_fn,output_fn):
     for n in ct.traverse():
         if n.name == "Wuhan" or n.name == "Wuhan|402124":
             n.set_style(rstyle)
-        elif n.name == "Sample":
+        elif n.name in sampleList:
             n.set_style(sstyle)
         elif not n.is_leaf():
             n.set_style(nstyle)

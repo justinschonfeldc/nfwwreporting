@@ -8,8 +8,9 @@ import pysam
 
 @click.command()
 @click.argument('bam_fn')
+@click.argument('output_fn')
 @click.option('--logscale',is_flag=True)
-def plot_depth(bam_fn,logscale):
+def plot_depth(bam_fn,output_fn,logscale):
     """ Plot coverage """
     # Check that the bam file exists.
     if not (path.exists(bam_fn) and path.isfile(bam_fn)) :
@@ -35,7 +36,7 @@ def plot_depth(bam_fn,logscale):
         ax.set_yscale('log')
     plt.xlabel('Position')
     plt.ylabel('Depth')
-    plt.savefig("coverage.png")
+    plt.savefig(output_fn)
 
 
 if __name__ == "__main__":
