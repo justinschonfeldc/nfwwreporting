@@ -80,6 +80,7 @@ process generate_consensus_fasta {
 
     """
         cat ${fileList} > ${con_fasta}
+        sed -i -e '/>/ s/ /_/' ${con_fasta}
         awk '/>/ {print}' ${con_fasta} | sed 's/^.//' > ${sample_names}
         muscle -in ${con_fasta} -out ${con_aligned_fasta} -maxiters 2
     """
