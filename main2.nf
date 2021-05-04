@@ -80,7 +80,6 @@ process generate_consensus_fasta {
 
     """
         cat ${fileList} > ${con_fasta}
-        sed -i -e '/>/ s/ /_/' ${con_fasta}
         awk '/>/ {print}' ${con_fasta} | sed 's/^.//' > ${sample_names}
         muscle -in ${con_fasta} -out ${con_aligned_fasta} -maxiters 2
     """
@@ -358,7 +357,7 @@ workflow {
 
     // Build the report
     build_report(plot_coverage.out.collect().toList(),
-        plot_heatmaps.out[1].collect(),
+        plot_heatmaps.out[0].collect(),
         draw_canada_oneper.out,
         draw_canada_recent.out)
 
