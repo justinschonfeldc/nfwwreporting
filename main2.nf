@@ -362,7 +362,7 @@ workflow {
         draw_canada_recent.out)
 
     // Convert the report to PDF
-    //convert_report_to_pdf(build_report.out)
+    convert_report_to_pdf(build_report.out)
 
     // Channel.from(generate_bai.out).view()
 
