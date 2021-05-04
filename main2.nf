@@ -280,7 +280,7 @@ process build_report {
     script:
     println "Generating the latex version of the report."
     """
-    python $projectDir/bin/report.py $projectDir ${params.consensus_file} ${params.bam_file}
+    python $projectDir/bin/report.py $projectDir ${params.batch_file}
     """
 }
 
