@@ -40,17 +40,14 @@ def helpMessage() {
 //=============================================================================
 
 process generate_bai {
-    publishDir "$projectDir/inputs/", mode: 'copy'
+    //publishDir "$projectDir/inputs/", mode: 'copy'
     input:
         tuple val(sampleID), path(bamPath), path(consensusPath), path(ivarPath)
     output:
         tuple val(sampleID), path(bamPath), path("${bamPath}.bai"), path(ivarPath)
     script:
+    log.info "Generate BAI files for ${sampleID}"
     """
-        echo $sampleID
-        echo $bamPath
-        echo $consensusPath
-        echo $ivarPath
         samtools index ${bamPath}
     """
 }
@@ -62,21 +59,24 @@ process generate_consensus_fasta {
         path(con_aligned_fasta)
         path(sample_names)
     script:
-    log.info "Generate Consensus fasta"
-    log.info "${sampleList}"
+    
+    
     // transformedList = sampleList.collate(4)
 
     fileList = ""
 
-    for (entry in sampleList) {
-        log.info "${entry[2]}"
+    for (entry in sampleList.collate(4)) {
+        log.info "Concat consensus fasta file: ${entry[2]}"
         fileList = fileList + " ${entry[2]}"
     }
-    log.info "Concatenate consensus fasta files into one file"
+    
 
     con_fasta = "combined_consensus.fasta"
     con_aligned_fasta = "con_aligned.fasta"
     sample_names = "sample_names.txt"
+
+    log.info "Generate a single consensus multi-fasta file ${con_aligned_fasta}"
+    //log.info "${sampleList}"
 
     """
         cat ${fileList} > ${con_fasta}
@@ -92,7 +92,7 @@ process collect_subset_for_trees {
     file 'global_oneper_subset.fasta'
 
     script:
-    println "Generating subsampling of GISAID data for tree construction."
+    log.info "Generating subsampling of GISAID data for tree construction."
     """
     python $projectDir/bin/subsample.py $projectDir/${params.gisaid_metadata_file} $projectDir/${params.gisaid_msa_file}
     """
@@ -177,7 +177,7 @@ process build_canada_recent {
 
 
 process draw_canada_recent {
-    publishDir "$projectDir/outputs/trees"
+    publishDir "$projectDir/outputs/trees", mode: 'copy'
     input:
     file 'canada_recent.treefile'
     path(sampleFile)
@@ -193,7 +193,7 @@ process draw_canada_recent {
 }
 
 process draw_canada_oneper {
-    publishDir "$projectDir/outputs/trees"
+    publishDir "$projectDir/outputs/trees", mode: 'copy'
     input:
     file 'canada_oneper.treefile'
     path(sampleFile)
@@ -207,7 +207,7 @@ process draw_canada_oneper {
 }
 
 process draw_global_oneper {
-    publishDir "$projectDir/outputs/trees"
+    publishDir "$projectDir/outputs/trees", mode: 'copy'
     input:
     file 'global_oneper.treefile'
     output:
@@ -222,17 +222,17 @@ process draw_global_oneper {
 
 
 process plot_coverage { 
-    publishDir "$projectDir/outputs/coverage"
+    publishDir "$projectDir/outputs/coverage", mode: 'copy'
     input:
-    // file "$projectDir/${params.bam_file}.bai"
-    // path(bamPath)
     tuple val(sampleID), path(bamPath), path(baiPath), path(ivarPath)
+    
     output:
-    file "${sampleID}_coverage.png"
+    file "*_coverage.png"
+    
  
     script:
-    println "Generate a plot of the coverage."
-    println bamPath
+    log.info "Generate a plot of the coverage for ${sampleID}"
+    
     """
     python $projectDir/bin/plot_coverage.py ${bamPath} ${sampleID}_coverage.png
     """
@@ -245,8 +245,7 @@ process plot_heatmaps {
     val(sampleList)
     output:
     file "heatmap*.png" 
-    val 1
- 
+    
     script:
     // log.info "HERE IT IS"
     // log.info "${sampleList}"
@@ -258,12 +257,14 @@ process plot_heatmaps {
     File file = new File("${projectDir}/inputs/vcfparser_batch.tsv")
     // Initialize the file for writing by overwriting any existing file
     file.write("")
+    sampleIDs=[]
     for ( entry in transformedList) {
-        log.info "Entry: ${entry}, ${entry[0]}"
+        //log.info "Entry: ${entry}, ${entry[0]}"
         // Append each entry to the existing file
         file << "${entry[0]}\t${entry[3]}\t${entry[1]}\n"
+        sampleIDs.add("${entry[0]}")
     }
-    log.info "Generate heatmap plots for each VOC using VCFParser"
+    log.info "Generate heatmap plots for each VOC using VCFParser for samples: ${sampleIDs}"
     """
     vcfparser -f ${projectDir}/inputs/vcfparser_batch.tsv -voc all --subplots_mode oneplotperfile --annotate
     """
@@ -278,7 +279,7 @@ process build_report {
     output:
     file 'covid_variants_report.tex'
     script:
-    println "Generating the latex version of the report."
+    log.info "Generating the latex version of the report. Heatmap files: ${heatmaps}"
     """
     python $projectDir/bin/report.py $projectDir ${params.batch_file}
     """
@@ -330,19 +331,19 @@ workflow {
 
     // plot_coverage(baiChannel)
 
-    generate_bai(Channel.from(samples).map(it -> tuple(it[0], it[1], it[2], it[3]))) 
+    samples_batch_ch = Channel.from(samples).map(it -> tuple(it[0], it[1], it[2], it[3]))
+    generate_bai(samples_batch_ch)
 
-    // generate_bai.out.view()
-
+    //Step 1: Generate coverage plots and multi-samples heatmaps for each VOC
     plot_coverage(generate_bai.out)
+    plot_heatmaps(generate_bai.out.collect())
 
-    plot_heatmaps(generate_bai.out.collect().view())
-    // Channel.from(samples).map(it -> tuple(it[0], it[1], it[2], it[3])) | generate_bai | plot_coverage
+    //// Channel.from(samples).map(it -> tuple(it[0], it[1], it[2], it[3])) | generate_bai | plot_coverage
 
-    Channel.from(samples).collect() | generate_consensus_fasta
-
+    ///Channel.from(samples).collect() | 
+    //Step 2: Generate alignment of input samples to GISAID Canada sequences
+    generate_consensus_fasta(samples_batch_ch.collect())
     collect_subset_for_trees()
-
     align_canada_recent(generate_consensus_fasta.out[0],collect_subset_for_trees.out[0])
     align_canada_oneper(generate_consensus_fasta.out[0],collect_subset_for_trees.out[1])
     
@@ -355,10 +356,13 @@ workflow {
     draw_canada_recent(build_canada_recent.out,generate_consensus_fasta.out[1])
 
     // Build the report
-    build_report(plot_coverage.out.collect().toList(),plot_heatmaps.out[1],draw_canada_oneper.out,draw_canada_recent.out)
+    build_report(plot_coverage.out.collect().toList(),
+        plot_heatmaps.out[1].collect(),
+        draw_canada_oneper.out,
+        draw_canada_recent.out)
 
     // Convert the report to PDF
-    convert_report_to_pdf(build_report.out)
+    //convert_report_to_pdf(build_report.out)
 
     // Channel.from(generate_bai.out).view()
 
