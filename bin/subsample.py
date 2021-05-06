@@ -39,19 +39,27 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     # Create two subsets, one with one per lineage and one with one per province
     # Create the one per lineage
 
-    # Subset the data to rows with an accession (gisaid_epi_isl)
-    df = df[df['gisaid_epi_isl'].isna()==False]
+    if 'gisaid_epi_isl' in df.columns():
+        acckey = 'gisaid_epi_isl'
+    elif 'Accession ID' in df.columns():
+        acckey = 'Accession ID'
+    else:
+        print("No valid accession key found (gisai_epi_isl,Accession ID).")
+        return
+
+    # Subset the data to rows with an accession (acckey)
+    df = df[df[acckey].isna()==False]
 
     map_to_pango = {}
     for i in range(len(df)):
-        map_to_pango[df['gisaid_epi_isl'][i]]=df['pangolin_lineage'][i]
+        map_to_pango[df[acckey][i]]=df['pangolin_lineage'][i]
 
     lineage_list = df['pangolin_lineage'].value_counts().index
     lineage_dict = {}
     for lineage in lineage_list:
         dfs = df[df['pangolin_lineage']==lineage]
         lineage_dict[lineage]=list()
-        for accession in dfs['gisaid_epi_isl']:
+        for accession in dfs[acckey]:
             if accession not in acc_ndict:
                 continue
             lineage_dict[lineage].append([accession,acc_ndict[accession]])
@@ -93,7 +101,7 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     for lineage in lineage_list:
         dfs = dfc[dfc['pangolin_lineage']==lineage]
         lineage_dict[lineage]=list()
-        for accession in dfs['gisaid_epi_isl']:
+        for accession in dfs[acckey]:
             if accession not in acc_ndict:
                 continue
             lineage_dict[lineage].append([accession,acc_ndict[accession]])
@@ -138,8 +146,8 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     date_list = []
     found_recent = 0
     for i in range(len(dfcs)):
-        if dfcs['gisaid_epi_isl'][i] in ids_in_msa:
-            sequence_list.append(dfcs['gisaid_epi_isl'][i])
+        if dfcs[acckey][i] in ids_in_msa:
+            sequence_list.append(dfcs[acckey][i])
             lineage_list.append(dfcs['pangolin_lineage'][i])
             date_list.append(dfcs['date_submitted'][i])
             found_recent += 1
