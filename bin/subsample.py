@@ -39,25 +39,43 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     # Create two subsets, one with one per lineage and one with one per province
     # Create the one per lineage
 
-    if 'gisaid_epi_isl' in df.columns():
-        acckey = 'gisaid_epi_isl'
-    elif 'Accession ID' in df.columns():
-        acckey = 'Accession ID'
+    gisaid_id_acc_name_list = ['gisaid_epi_isl', 'Accession ID']
+    if df.columns[df.columns.isin(gisaid_id_acc_name_list)].shape[0] == 0:
+        print("No valid accession key found "+",".join(gisaid_id_acc_name_list)+".")
+        return 1
     else:
-        print("No valid accession key found (gisai_epi_isl,Accession ID).")
-        return
+        acckey = df.columns[df.columns.isin(gisaid_id_acc_name_list)][0]
+
+   # if 'gisaid_epi_isl' in df.columns:
+   #     acckey = 'gisaid_epi_isl'
+   # elif 'Accession ID' in df.columns:
+   #     acckey = 'Accession ID'
+   # else:
+   #     print("No valid accession key found (gisai_epi_isl,Accession ID).")
+   #     return
+
+
+
 
     # Subset the data to rows with an accession (acckey)
     df = df[df[acckey].isna()==False]
 
+    gisaid_pango_lin_name_list = ['pangolin_lineage', 'Pango lineage']
+    if df.columns[df.columns.isin(gisaid_pango_lin_name_list)].shape[0] == 0:
+        print("Pangoline lineage column not found. Tried "+",".join(gisaid_pango_lin_name_list)+"")
+        return 1
+    else:
+        gisaid_pango_lin_name = df.columns[df.columns.isin(gisaid_pango_lin_name_list)][0]
+
+
     map_to_pango = {}
     for i in range(len(df)):
-        map_to_pango[df[acckey][i]]=df['pangolin_lineage'][i]
+        map_to_pango[df[acckey][i]]=df[gisaid_pango_lin_name][i]
 
-    lineage_list = df['pangolin_lineage'].value_counts().index
+    lineage_list = df[gisaid_pango_lin_name].value_counts().index
     lineage_dict = {}
     for lineage in lineage_list:
-        dfs = df[df['pangolin_lineage']==lineage]
+        dfs = df[df[gisaid_pango_lin_name]==lineage]
         lineage_dict[lineage]=list()
         for accession in dfs[acckey]:
             if accession not in acc_ndict:
@@ -92,14 +110,21 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     # Create a Canadian subset
     # JSTD: Clean up country field
     # JSTD: Province list is fragile, clean up assumes 'Canada' is the smallest value
-    dfc = df[df['country']=='Canada']
-    dfc = dfc[dfc['division'].isna()==False]
-    province_list = dfc['division'].value_counts().index[:-1]
+    if 'country' in df.columns:
+        dfc = df[df['country']=='Canada']
+        dfc = dfc[dfc['division'].isna() == False]
+        #province_list = dfc['division'].value_counts().index[:-1]
+    elif 'Location' in df.columns:
+        dfc = df.loc[df['Location'].str.contains("Canada")]
+    else:
+        print("There is no \'country\' field. Check metadata")
+        return  1
 
-    lineage_list = dfc['pangolin_lineage'].value_counts().index
+
+    lineage_list = dfc[gisaid_pango_lin_name].value_counts().index
     lineage_dict = {}
     for lineage in lineage_list:
-        dfs = dfc[dfc['pangolin_lineage']==lineage]
+        dfs = dfc[dfc[gisaid_pango_lin_name]==lineage]
         lineage_dict[lineage]=list()
         for accession in dfs[acckey]:
             if accession not in acc_ndict:
@@ -139,7 +164,14 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
             continue
         ids_in_msa.add(lid[1])
 
-    dfcs = dfc.sort_values('date_submitted',ascending = False)  
+    gisaid_data_submitted_name_list = ['Submission date', 'date_submitted']
+    if df.columns[df.columns.isin(gisaid_data_submitted_name_list)].shape[0] == 0:
+        print("Date submitted column not found. Tried " + ",".join(gisaid_data_submitted_name_list) + "")
+        return 1
+    else:
+        gisaid_data_submitted_name = df.columns[df.columns.isin(gisaid_data_submitted_name_list)][0]
+
+    dfcs = dfc.sort_values(gisaid_data_submitted_name,ascending = False)
     dfcs.reset_index(drop=True,inplace=True)  
     sequence_list = []
     lineage_list = []
@@ -148,8 +180,8 @@ def subsample(metadata_fn, msa_fn, nums, rseed, nrecent):
     for i in range(len(dfcs)):
         if dfcs[acckey][i] in ids_in_msa:
             sequence_list.append(dfcs[acckey][i])
-            lineage_list.append(dfcs['pangolin_lineage'][i])
-            date_list.append(dfcs['date_submitted'][i])
+            lineage_list.append(dfcs[gisaid_pango_lin_name][i])
+            date_list.append(dfcs[gisaid_data_submitted_name][i])
             found_recent += 1
         if found_recent == nrecent:
             break
