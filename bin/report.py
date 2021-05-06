@@ -57,6 +57,8 @@ def generate_document_header(report_fh):
     report_fh.write("\\usepackage[final]{pdfpages}\n")
     report_fh.write("\\usepackage{graphicx}\n")
     report_fh.write("\\usepackage{grffile}\n")
+    report_fh.write("\\usepackage{float}\n")
+
     report_fh.write("\\title{SARS-CoV-2 Wastewater Variant Report}\n")
     report_fh.write("\\date{\\today}\n")
     report_fh.write("\\author{PHAC}\n")
@@ -117,7 +119,7 @@ def generate_qa_section(report_fh, base_path, batch_path):
     generate_table(df,report_fh)
     # Show the coverage plots
     for sample in sdata:
-        report_fh.write("\\begin{figure}\n")
+        report_fh.write("\\begin{figure}[H]\n")
         report_fh.write(f"\\includegraphics[width=7in]{{{base_path+'/outputs/coverage/'+sample+'_coverage.png'}}}")
         report_fh.write(f"\\caption{{{sample}}}")
         report_fh.write("\\end{figure}\n")
@@ -125,7 +127,7 @@ def generate_qa_section(report_fh, base_path, batch_path):
 def generate_qa_consensus_tree(report_fh,path):
     """Generates a section of the report displaying the consensus placed in a tree."""
     report_fh.write("\\section{Consensus Sequence Tree}\n")
-    report_fh.write("\\begin{figure}\n")
+    report_fh.write("\\begin{figure}[H]\n")
     report_fh.write(f"\\includegraphics[width=6in,height=6in]{{{path+'canada_oneper.png'}}}\n")
     report_fh.write("\\caption{ML-Tree (iqtree 2.0.3) composed of the sample, the Wuhan reference, and 1 randomly sampled sequence per Canadian Pangolin lineage.}")
     report_fh.write("\\end{figure}\n")
@@ -133,7 +135,7 @@ def generate_qa_consensus_tree(report_fh,path):
     # report_fh.write(f"\\includegraphics[width=6in,height=6in]{{{path+'global_sample_tree.png'}}}\n")
     # report_fh.write("\\caption{ML-Tree (iqtree 2.0.3) composed of the sample, the Wuhan reference, and 1 randomly sampled sequence per global Pangolin lineage.}")
     # report_fh.write("\\end{figure}\n")
-    report_fh.write("\\begin{figure}\n")
+    report_fh.write("\\begin{figure}[H]\n")
     report_fh.write(f"\\includegraphics[width=6in,height=6in]{{{path+'canada_recent.png'}}}\n")
     report_fh.write("\\caption{ML-Tree (iqtree 2.0.3) composed of the sample, the Wuhan reference, and the 100 most recent Canadian sequences present in the GISAID MSA.}")
     report_fh.write("\\end{figure}\n")
@@ -294,7 +296,7 @@ def generate_variant_specific_sections(report_fh, base_path, batch_path, variant
     png_file_list = [x for x in file_list if x.endswith('.png')]
     
     for file_name in png_file_list:        
-        report_fh.write("\\begin{figure}\n")
+        report_fh.write("\\begin{figure}[H]\n")
         report_fh.write(f"\\includegraphics{{{base_path+'/outputs/heatmaps/'+file_name}}}\n")
         report_fh.write("\\end{figure}\n")
 
