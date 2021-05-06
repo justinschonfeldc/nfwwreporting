@@ -61,21 +61,15 @@ Pipeline that automates COVID-19 wastewater report generation
 ## Inputs
 
 ### Sample Inputs:
-Batch File - batch_file - Assign a relative path in nextflow.config.  Default: "${params.indir}/batch.tsv"
+Sample BAM File
+
+Sample Consensus FIle
+
+IVAR Output File
 
 ### Reference Inputs:
-GISAID Metadata - gisaid_msa_file - Assign a relative path in nextflow.config.  Default: gisaid_msa_file = "${params.indir}/gisaid_msa.fasta 
+GISAID Metadata
 
-GISAID Multiple Sequence Alignment - gisaid_metadata_file - Assign a relative path in nextflow.config.  Default: gisaid_metadata_file = "${params.indir}/gisaid_metadata.fasta
+GISAID Multiple Sequence Alignment
 
-Variant Specification - variants_file - Assign a relative path in nextflow.config. Default: variants_file = "${params.indir}/cov_lineage_variants.tsv"
-
-
-### Batch Example:
-(tab delimeted)
-
-SampleID    BAMFile ConsensusFile   IvarTSVFile
-
-id1 /path/inputs/sample.bam /path/inputs/consensus.fasta    /path/inputs/ivar.tsv
-
-id2 /path/inputs/sample2.bam /path/inputs/consensus2.fasta    /path/inputs/ivar2.tsv
+Variant Specification
