@@ -75,5 +75,7 @@ Variant Specification - variants_file - Assign a relative path in nextflow.confi
 (tab delimeted)
 
 SampleID    BAMFile ConsensusFile   IvarTSVFile
+
 id1 /path/inputs/sample.bam /path/inputs/consensus.fasta    /path/inputs/ivar.tsv
+
 id2 /path/inputs/sample2.bam /path/inputs/consensus2.fasta    /path/inputs/ivar2.tsv
