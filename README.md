@@ -70,3 +70,10 @@ GISAID Multiple Sequence Alignment - gisaid_metadata_file - Assign a relative pa
 
 Variant Specification - variants_file - Assign a relative path in nextflow.config. Default: variants_file = "${params.indir}/cov_lineage_variants.tsv"
 
+
+### Batch Example:
+(tab delimeted)
+
+SampleID    BAMFile ConsensusFile   IvarTSVFile
+id1 /home/user/Research/nfwwreporting/inputs/sample.bam /home/user/Research/nfwwreporting/inputs/consensus.fasta    /home/user/Research/nfwwreporting/inputs/ivar.tsv
+id2 /home/user/Research/nfwwreporting/inputs/sample2.bam /home/user/Research/nfwwreporting/inputs/consensus2.fasta    /home/user/Research/nfwwreporting/inputs/ivar2.tsv
