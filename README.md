@@ -25,7 +25,7 @@ powered by NextFlow, Conda and Singularity
 1. Clone repository with Git and Git LFS
     ```
         git clone https://github.com/justinschonfeldc/nfwwreporting.git
-        git lfs pull
+        git pull
     ```
 1. Run NextFlow on inputs (see `Running` and `Usage` sections)   
 
@@ -40,7 +40,10 @@ We recommend installating custom NextFlow conda environment
     ```
 1. Setup inputs and run NextFlow workflow. Additional run parameters are in the `Usage` section
     ```bash
-    nextflow run main.nf -profile conda --resume
+    #if running locally
+    nextflow run main.nf -profile conda -resume
+    # if running on waffles server remotely with SLURM scheduler
+    nextflow run main.nf  --batch_file ./inputs/batch.tsv  -profile conda -process.executor="slurm" -process.queue="NMLResearch" -process.cpus=4 -process.memory="4G"  -resume
     ```
 
 
