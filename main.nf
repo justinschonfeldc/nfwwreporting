@@ -89,9 +89,23 @@ process assign_nextclade_2_consensus_seqs {
     publishDir "$projectDir/outputs/nextclade", mode: 'copy'
     
     input:
-    val(sampleList)
+    path( concat_consensus_multi_fasta )
     output:
     path('nextclade-output-file.tsv')
+    
+    script:
+    """
+    nextclade -i $concat_consensus_multi_fasta --output-tsv  nextclade-output-file.tsv
+    """
+}
+
+process prepate_input_4_nextclade {
+    publishDir "$projectDir/temp/", mode: 'copy'
+    
+    input:
+    val(sampleList)
+    output:
+    path 'concat_consensus_multi.fasta'
     
     script:
     fileFastaPathList = ""
@@ -101,8 +115,7 @@ process assign_nextclade_2_consensus_seqs {
         fileFastaPathList = fileFastaPathList + " ${entry[2]}"
     }
 
-    log.info "Assigning NextClade to consensus fasta sequences: {$fileFastaPathList}"
-
+    script:
     """
     fastaFileNames=()
     for sample_path in ${fileFastaPathList};do 
@@ -113,10 +126,8 @@ process assign_nextclade_2_consensus_seqs {
     done
     
     cat \${fastaFileNames[@]} > concat_consensus_multi.fasta
-    nextclade -i concat_consensus_multi.fasta --output-tsv  nextclade-output-file.tsv
     """
 }
-
 
 process collect_subset_for_trees {
     output:
@@ -368,7 +379,7 @@ workflow {
     generate_bai(samples_batch_ch)
 
     //Step 0: Assign NextClade to consensus COVID-19 sequences
-    assign_nextclade_2_consensus_seqs(samples_batch_ch.collect())
+    assign_nextclade_2_consensus_seqs(prepate_input_4_nextclade(samples_batch_ch.collect()))
 
     //Step 1: Generate coverage plots and multi-samples heatmaps for each VOC
     plot_coverage(generate_bai.out)
