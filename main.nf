@@ -99,8 +99,7 @@ process assign_nextclade_2_consensus_seqs {
     """
 }
 
-process prepate_input_4_nextclade {
-    publishDir "$projectDir/temp/", mode: 'copy'
+process prepare_input_4_nextclade {
     
     input:
     val(sampleList)
@@ -379,7 +378,7 @@ workflow {
     generate_bai(samples_batch_ch)
 
     //Step 0: Assign NextClade to consensus COVID-19 sequences
-    assign_nextclade_2_consensus_seqs(prepate_input_4_nextclade(samples_batch_ch.collect()))
+    assign_nextclade_2_consensus_seqs(prepare_input_4_nextclade(samples_batch_ch.collect()))
 
     //Step 1: Generate coverage plots and multi-samples heatmaps for each VOC
     plot_coverage(generate_bai.out)
